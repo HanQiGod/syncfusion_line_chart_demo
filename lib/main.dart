@@ -27,6 +27,8 @@ class SyncfusionLineChartApp extends StatelessWidget {
 
 enum ChartMode { basic, compare, smooth, area }
 
+enum TimeGranularity { week, month, year }
+
 enum MonthRange { firstHalf, fullYear, secondHalf }
 
 extension ChartModeExtension on ChartMode {
@@ -83,6 +85,41 @@ extension ChartModeExtension on ChartMode {
   }
 }
 
+extension TimeGranularityExtension on TimeGranularity {
+  String get label {
+    switch (this) {
+      case TimeGranularity.week:
+        return '周';
+      case TimeGranularity.month:
+        return '月';
+      case TimeGranularity.year:
+        return '年';
+    }
+  }
+
+  String get sectionTitle {
+    switch (this) {
+      case TimeGranularity.week:
+        return '周维度';
+      case TimeGranularity.month:
+        return '月维度';
+      case TimeGranularity.year:
+        return '年维度';
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case TimeGranularity.week:
+        return Icons.view_week_rounded;
+      case TimeGranularity.month:
+        return Icons.calendar_view_month_rounded;
+      case TimeGranularity.year:
+        return Icons.date_range_rounded;
+    }
+  }
+}
+
 extension MonthRangeExtension on MonthRange {
   String get label {
     switch (this) {
@@ -107,6 +144,28 @@ extension MonthRangeExtension on MonthRange {
   }
 }
 
+class ChartScopeData {
+  const ChartScopeData({
+    required this.currentData,
+    required this.compareData,
+    required this.currentSeriesName,
+    required this.compareSeriesName,
+    required this.scopeLabel,
+    required this.scopeHint,
+    required this.peakLabel,
+    required this.compareHint,
+  });
+
+  final List<ChartData> currentData;
+  final List<ChartData> compareData;
+  final String currentSeriesName;
+  final String compareSeriesName;
+  final String scopeLabel;
+  final String scopeHint;
+  final String peakLabel;
+  final String compareHint;
+}
+
 class LineChartSample extends StatefulWidget {
   const LineChartSample({super.key});
 
@@ -120,7 +179,27 @@ class _LineChartSampleState extends State<LineChartSample> {
   static const Color _surface = Color(0xFFFFFCF5);
   static const Color _ink = Color(0xFF102A2A);
 
-  static const List<ChartData> _currentYearData = <ChartData>[
+  static const List<ChartData> _weekCurrentData = <ChartData>[
+    ChartData('Mon', 14),
+    ChartData('Tue', 18),
+    ChartData('Wed', 16),
+    ChartData('Thu', 24),
+    ChartData('Fri', 29),
+    ChartData('Sat', 34),
+    ChartData('Sun', 26),
+  ];
+
+  static const List<ChartData> _weekLastData = <ChartData>[
+    ChartData('Mon', 11),
+    ChartData('Tue', 16),
+    ChartData('Wed', 15),
+    ChartData('Thu', 21),
+    ChartData('Fri', 25),
+    ChartData('Sat', 28),
+    ChartData('Sun', 23),
+  ];
+
+  static const List<ChartData> _monthCurrentData = <ChartData>[
     ChartData('Jan', 12),
     ChartData('Feb', 18),
     ChartData('Mar', 22),
@@ -135,7 +214,7 @@ class _LineChartSampleState extends State<LineChartSample> {
     ChartData('Dec', 81),
   ];
 
-  static const List<ChartData> _lastYearData = <ChartData>[
+  static const List<ChartData> _monthLastData = <ChartData>[
     ChartData('Jan', 10),
     ChartData('Feb', 14),
     ChartData('Mar', 19),
@@ -150,8 +229,27 @@ class _LineChartSampleState extends State<LineChartSample> {
     ChartData('Dec', 73),
   ];
 
+  static const List<ChartData> _yearActualData = <ChartData>[
+    ChartData('2021', 168),
+    ChartData('2022', 196),
+    ChartData('2023', 242),
+    ChartData('2024', 287),
+    ChartData('2025', 336),
+    ChartData('2026', 392),
+  ];
+
+  static const List<ChartData> _yearTargetData = <ChartData>[
+    ChartData('2021', 160),
+    ChartData('2022', 188),
+    ChartData('2023', 230),
+    ChartData('2024', 278),
+    ChartData('2025', 330),
+    ChartData('2026', 380),
+  ];
+
   late final TooltipBehavior _tooltipBehavior;
   ChartMode _selectedMode = ChartMode.basic;
+  TimeGranularity _selectedGranularity = TimeGranularity.month;
   MonthRange _selectedRange = MonthRange.firstHalf;
 
   @override
@@ -166,19 +264,50 @@ class _LineChartSampleState extends State<LineChartSample> {
     );
   }
 
-  List<ChartData> get _visibleCurrentData =>
-      _sliceData(_currentYearData, _selectedRange);
-
-  List<ChartData> get _visibleLastYearData =>
-      _sliceData(_lastYearData, _selectedRange);
+  ChartScopeData get _activeScope {
+    switch (_selectedGranularity) {
+      case TimeGranularity.week:
+        return const ChartScopeData(
+          currentData: _weekCurrentData,
+          compareData: _weekLastData,
+          currentSeriesName: '本周',
+          compareSeriesName: '上周',
+          scopeLabel: '本周',
+          scopeHint: '展示 Mon 到 Sun 的周数据',
+          peakLabel: '峰值日期',
+          compareHint: '与上周同区间数据对比',
+        );
+      case TimeGranularity.month:
+        return ChartScopeData(
+          currentData: _sliceData(_monthCurrentData, _selectedRange),
+          compareData: _sliceData(_monthLastData, _selectedRange),
+          currentSeriesName: '2026',
+          compareSeriesName: '2025',
+          scopeLabel: _selectedRange.label,
+          scopeHint: _selectedRange.helperText,
+          peakLabel: '峰值月份',
+          compareHint: '与 2025 年同区间数据对比',
+        );
+      case TimeGranularity.year:
+        return const ChartScopeData(
+          currentData: _yearActualData,
+          compareData: _yearTargetData,
+          currentSeriesName: '实际',
+          compareSeriesName: '目标',
+          scopeLabel: '近六年',
+          scopeHint: '展示 2021 到 2026 的年度数据',
+          peakLabel: '峰值年份',
+          compareHint: '与年度目标数据对比',
+        );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final List<ChartData> currentData = _visibleCurrentData;
-    final List<ChartData> lastYearData = _visibleLastYearData;
-    final double totalSales = _sum(currentData);
-    final ChartData peakMonth = _peak(currentData);
-    final double growthRate = _growthRate(currentData, lastYearData);
+    final ChartScopeData scope = _activeScope;
+    final double totalSales = _sum(scope.currentData);
+    final ChartData peakPoint = _peak(scope.currentData);
+    final double growthRate = _growthRate(scope.currentData, scope.compareData);
 
     return Scaffold(
       appBar: AppBar(
@@ -213,28 +342,28 @@ class _LineChartSampleState extends State<LineChartSample> {
                       runSpacing: 16,
                       children: <Widget>[
                         _InsightCard(
-                          title: '当前范围总销量',
+                          title: '当前区间总量',
                           value: '${totalSales.toStringAsFixed(0)} 万',
-                          hint: _selectedRange.helperText,
+                          hint: scope.scopeHint,
                           accentColor: _primary,
                         ),
                         _InsightCard(
-                          title: '峰值月份',
+                          title: scope.peakLabel,
                           value:
-                              '${peakMonth.x} · ${peakMonth.y.toStringAsFixed(0)} 万',
+                              '${peakPoint.x} · ${peakPoint.y.toStringAsFixed(0)} 万',
                           hint: '当前展示区间内的最高点',
                           accentColor: _secondary,
                         ),
                         _InsightCard(
-                          title: '同比变化',
+                          title: '对比变化',
                           value: _formatGrowth(growthRate),
-                          hint: '与 2025 年同区间数据对比',
+                          hint: scope.compareHint,
                           accentColor: const Color(0xFF7C3AED),
                         ),
                       ],
                     ),
                     const SizedBox(height: 20),
-                    _buildChartCard(context, currentData, lastYearData),
+                    _buildChartCard(context, scope),
                   ],
                 ),
               ),
@@ -280,7 +409,7 @@ class _LineChartSampleState extends State<LineChartSample> {
           ),
           const SizedBox(height: 12),
           Text(
-            '一个页面同时演示基础折线、多线对比、平滑曲线和渐变面积图，并支持月份范围切换。',
+            '一个页面同时演示周/月/年粒度切换，并支持基础折线、多线对比、平滑曲线和渐变面积图。',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: const Color(0xFFE2F7F2),
               height: 1.45,
@@ -291,10 +420,11 @@ class _LineChartSampleState extends State<LineChartSample> {
             spacing: 10,
             runSpacing: 10,
             children: const <Widget>[
+              _Badge(text: '周/月/年'),
               _Badge(text: '图例'),
               _Badge(text: 'Tooltip'),
               _Badge(text: '数据标签'),
-              _Badge(text: '月份切换'),
+              _Badge(text: '范围切换'),
             ],
           ),
         ],
@@ -302,12 +432,8 @@ class _LineChartSampleState extends State<LineChartSample> {
     );
   }
 
-  Widget _buildChartCard(
-    BuildContext context,
-    List<ChartData> currentData,
-    List<ChartData> lastYearData,
-  ) {
-    final bool showDataLabels = currentData.length <= 6;
+  Widget _buildChartCard(BuildContext context, ChartScopeData scope) {
+    final bool showDataLabels = scope.currentData.length <= 7;
 
     return Card(
       color: _surface,
@@ -336,13 +462,36 @@ class _LineChartSampleState extends State<LineChartSample> {
             ),
             const SizedBox(height: 16),
             Text(
-              '当前模式：${_selectedMode.label} · 数据范围：${_selectedRange.label}',
+              '当前模式：${_selectedMode.label} · 时间粒度：${_selectedGranularity.label} · 数据范围：${scope.scopeLabel}',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: const Color(0xFF0F766E),
                 fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 16),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SegmentedButton<TimeGranularity>(
+                showSelectedIcon: false,
+                segments: TimeGranularity.values
+                    .map(
+                      (TimeGranularity granularity) =>
+                          ButtonSegment<TimeGranularity>(
+                            value: granularity,
+                            icon: Icon(granularity.icon, size: 18),
+                            label: Text(granularity.label),
+                          ),
+                    )
+                    .toList(),
+                selected: <TimeGranularity>{_selectedGranularity},
+                onSelectionChanged: (Set<TimeGranularity> value) {
+                  setState(() {
+                    _selectedGranularity = value.first;
+                  });
+                },
+              ),
+            ),
+            const SizedBox(height: 14),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: SegmentedButton<ChartMode>(
@@ -365,34 +514,59 @@ class _LineChartSampleState extends State<LineChartSample> {
               ),
             ),
             const SizedBox(height: 14),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: MonthRange.values
-                  .map(
-                    (MonthRange range) => ChoiceChip(
-                      label: Text(range.label),
-                      selected: _selectedRange == range,
-                      onSelected: (_) {
-                        setState(() {
-                          _selectedRange = range;
-                        });
-                      },
-                    ),
-                  )
-                  .toList(),
-            ),
+            if (_selectedGranularity == TimeGranularity.month)
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: MonthRange.values
+                    .map(
+                      (MonthRange range) => ChoiceChip(
+                        label: Text(range.label),
+                        selected: _selectedRange == range,
+                        onSelected: (_) {
+                          setState(() {
+                            _selectedRange = range;
+                          });
+                        },
+                      ),
+                    )
+                    .toList(),
+              )
+            else
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: const Color(0xFF0F766E).withValues(alpha: 0.18),
+                  ),
+                ),
+                child: Text(
+                  '${_selectedGranularity.sectionTitle}固定展示 ${scope.scopeLabel} 数据',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: const Color(0xFF0F766E),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             const SizedBox(height: 24),
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 320),
               child: SizedBox(
                 key: ValueKey<String>(
-                  '${_selectedMode.name}-${_selectedRange.name}',
+                  '${_selectedMode.name}-${_selectedGranularity.name}-${_selectedRange.name}',
                 ),
                 height: 360,
                 child: SfCartesianChart(
                   plotAreaBorderWidth: 0,
-                  title: ChartTitle(text: _selectedMode.chartTitle),
+                  title: ChartTitle(
+                    text:
+                        '${_selectedGranularity.sectionTitle} · ${_selectedMode.chartTitle}',
+                  ),
                   legend: Legend(
                     isVisible: _selectedMode == ChartMode.compare,
                     position: LegendPosition.bottom,
@@ -402,22 +576,22 @@ class _LineChartSampleState extends State<LineChartSample> {
                     majorGridLines: const MajorGridLines(width: 0),
                     majorTickLines: const MajorTickLines(size: 0),
                     axisLine: const AxisLine(width: 0),
-                    labelIntersectAction: _selectedRange == MonthRange.fullYear
+                    labelIntersectAction:
+                        _selectedGranularity == TimeGranularity.month &&
+                            _selectedRange == MonthRange.fullYear
                         ? AxisLabelIntersectAction.rotate45
                         : AxisLabelIntersectAction.none,
                   ),
                   primaryYAxis: NumericAxis(
                     minimum: 0,
-                    interval: 10,
+                    interval: _selectedGranularity == TimeGranularity.year
+                        ? 50
+                        : 10,
                     title: const AxisTitle(text: '销售额（万）'),
                     axisLine: const AxisLine(width: 0),
                     majorTickLines: const MajorTickLines(size: 0),
                   ),
-                  series: _buildSeries(
-                    currentData,
-                    lastYearData,
-                    showDataLabels,
-                  ),
+                  series: _buildSeries(scope, showDataLabels),
                 ),
               ),
             ),
@@ -428,18 +602,17 @@ class _LineChartSampleState extends State<LineChartSample> {
   }
 
   List<CartesianSeries<ChartData, String>> _buildSeries(
-    List<ChartData> currentData,
-    List<ChartData> lastYearData,
+    ChartScopeData scope,
     bool showDataLabels,
   ) {
     switch (_selectedMode) {
       case ChartMode.basic:
         return <CartesianSeries<ChartData, String>>[
           LineSeries<ChartData, String>(
-            dataSource: currentData,
+            dataSource: scope.currentData,
             xValueMapper: (ChartData data, _) => data.x,
             yValueMapper: (ChartData data, _) => data.y,
-            name: '2026',
+            name: scope.currentSeriesName,
             color: _primary,
             width: 3,
             markerSettings: const MarkerSettings(isVisible: true),
@@ -450,20 +623,20 @@ class _LineChartSampleState extends State<LineChartSample> {
       case ChartMode.compare:
         return <CartesianSeries<ChartData, String>>[
           LineSeries<ChartData, String>(
-            dataSource: currentData,
+            dataSource: scope.currentData,
             xValueMapper: (ChartData data, _) => data.x,
             yValueMapper: (ChartData data, _) => data.y,
-            name: '2026',
+            name: scope.currentSeriesName,
             color: _primary,
             width: 3,
             markerSettings: const MarkerSettings(isVisible: true),
             animationDuration: 650,
           ),
           LineSeries<ChartData, String>(
-            dataSource: lastYearData,
+            dataSource: scope.compareData,
             xValueMapper: (ChartData data, _) => data.x,
             yValueMapper: (ChartData data, _) => data.y,
-            name: '2025',
+            name: scope.compareSeriesName,
             color: _secondary,
             width: 3,
             dashArray: const <double>[7, 4],
@@ -474,10 +647,10 @@ class _LineChartSampleState extends State<LineChartSample> {
       case ChartMode.smooth:
         return <CartesianSeries<ChartData, String>>[
           SplineSeries<ChartData, String>(
-            dataSource: currentData,
+            dataSource: scope.currentData,
             xValueMapper: (ChartData data, _) => data.x,
             yValueMapper: (ChartData data, _) => data.y,
-            name: '2026',
+            name: scope.currentSeriesName,
             color: _primary,
             width: 3,
             splineType: SplineType.monotonic,
@@ -489,10 +662,10 @@ class _LineChartSampleState extends State<LineChartSample> {
       case ChartMode.area:
         return <CartesianSeries<ChartData, String>>[
           AreaSeries<ChartData, String>(
-            dataSource: currentData,
+            dataSource: scope.currentData,
             xValueMapper: (ChartData data, _) => data.x,
             yValueMapper: (ChartData data, _) => data.y,
-            name: '2026',
+            name: scope.currentSeriesName,
             borderColor: _primary,
             borderWidth: 3,
             gradient: LinearGradient(
@@ -533,12 +706,12 @@ class _LineChartSampleState extends State<LineChartSample> {
     );
   }
 
-  static double _growthRate(List<ChartData> current, List<ChartData> previous) {
-    final double previousTotal = _sum(previous);
-    if (previousTotal == 0) {
+  static double _growthRate(List<ChartData> current, List<ChartData> compare) {
+    final double compareTotal = _sum(compare);
+    if (compareTotal == 0) {
       return 0;
     }
-    return (_sum(current) - previousTotal) / previousTotal * 100;
+    return (_sum(current) - compareTotal) / compareTotal * 100;
   }
 
   static String _formatGrowth(double value) {
