@@ -499,8 +499,8 @@ class _LineChartSampleState extends State<LineChartSample> {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: <Color>[
-                _primary.withOpacity(0.45),
-                _primary.withOpacity(0.06),
+                _primary.withValues(alpha: 0.45),
+                _primary.withValues(alpha: 0.06),
               ],
             ),
             markerSettings: const MarkerSettings(isVisible: true),
@@ -568,7 +568,7 @@ class _InsightCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: accentColor.withOpacity(0.12)),
+        border: Border.all(color: accentColor.withValues(alpha: 0.12)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
